@@ -95,7 +95,7 @@ const ThreadWelcome: FC = () => {
             exit={{ opacity: 0, y: 10 }}
             className="aui-thread-welcome-message-motion-1 text-2xl font-semibold"
           >
-            Hello there!
+           KKUC Chatbot! 
           </m.div>
           <m.div
             initial={{ opacity: 0, y: 10 }}
@@ -104,7 +104,7 @@ const ThreadWelcome: FC = () => {
             transition={{ delay: 0.1 }}
             className="aui-thread-welcome-message-motion-2 text-2xl text-muted-foreground/65"
           >
-            How can I help you today?
+            Bestil tid eller få svar på dine spørgsmål
           </m.div>
         </div>
       </div>
@@ -118,13 +118,13 @@ const ThreadSuggestions: FC = () => {
     <div className="aui-thread-welcome-suggestions grid w-full gap-2 pb-4 @md:grid-cols-2">
       {[
         {
-          title: "What's the weather",
-          label: "in San Francisco?",
-          action: "What's the weather in San Francisco?",
+          title: "Book dit første møde med en visitator",
+          label: "",
+          action: "Book en tid",
         },
         {
-          title: "Explain React hooks",
-          label: "like useState and useEffect",
+          title: "Book en rådgivende samtale",
+          label: "",
           action: "Explain React hooks like useState and useEffect",
         },
         {
@@ -177,7 +177,7 @@ const Composer: FC = () => {
       <ComposerPrimitive.Root className="aui-composer-root relative flex w-full flex-col rounded-3xl border border-border bg-muted px-1 pt-2 shadow-[0_9px_9px_0px_rgba(0,0,0,0.01),0_2px_5px_0px_rgba(0,0,0,0.06)] dark:border-muted-foreground/15">
         <ComposerAttachments />
         <ComposerPrimitive.Input
-          placeholder="Send a message..."
+          placeholder="Spørg ind til KKUC....."
           className="aui-composer-input mb-1 max-h-32 min-h-16 w-full resize-none bg-transparent px-3.5 pt-1.5 pb-3 text-base outline-none placeholder:text-muted-foreground focus:outline-primary"
           rows={1}
           autoFocus
@@ -191,7 +191,7 @@ const Composer: FC = () => {
 
 const ComposerAction: FC = () => {
   return (
-    <div className="aui-composer-action-wrapper relative mx-1 mt-2 mb-2 flex items-center justify-between">
+    <div className="aui-composer-action-wrapper relative mx-1 mt-2 mb-2 flex-end items-center justify-between">
       <ComposerAddAttachment />
 
       <ThreadPrimitive.If running={false}>
