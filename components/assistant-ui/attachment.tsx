@@ -118,7 +118,7 @@ const AttachmentThumb: FC = () => {
   return (
     <Avatar className="aui-attachment-tile-avatar h-full w-full rounded-none">
       <AvatarImage
-        src={src}
+        src={"/Users/bruger/Documents/KKUC/kkuc_app/components/assets/logo.svg"}
         alt="Attachment preview"
         className="aui-attachment-tile-image object-cover"
       />
