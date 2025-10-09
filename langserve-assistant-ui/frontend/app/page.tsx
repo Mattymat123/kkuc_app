@@ -1,9 +1,9 @@
-import { MyAssistant } from "@/components/MyAssistant";
+import { MyAssistantModal } from "@/components/assistant-modal";
 
 export default function Home() {
   return (
     <main className="h-dvh">
-      <MyAssistant />
+      <MyAssistantModal />
     </main>
   );
 }

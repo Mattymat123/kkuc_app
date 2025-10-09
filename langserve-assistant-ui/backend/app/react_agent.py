@@ -5,7 +5,7 @@ from langchain_core.tools import tool
 from langchain_core.messages import SystemMessage
 from langgraph.prebuilt import create_react_agent
 from datetime import datetime, timezone
-
+from .tools.web_scraping import web_scrape
 load_dotenv()
 
 from langchain_openai import ChatOpenAI
@@ -45,14 +45,10 @@ def get_stock_price(stock_symbol: str):
     return mock_stock_data["AAPL"]
 
 
-tools = [get_weather, get_stock_price]
+tools = [get_weather, get_stock_price, web_scrape]
 
-SYSTEM_PROMPT = """You are a helpful assistant. 
-You are able to call the following tools:
-- get_weather
-- get_stock_price
+SYSTEM_PROMPT = """Du er en hjælpsom AI robot for KKUC. Du svarer på dansk og hjælper med vejledning til alkohol og stofmisbrug. Du kan scrape kkuc efter information med funktionen web_scrape.
 """
 
 system_message = SystemMessage(content=SYSTEM_PROMPT)
 agent_executor = create_react_agent(llm, tools, messages_modifier=system_message)
-
