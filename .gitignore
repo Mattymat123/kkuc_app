@@ -47,6 +47,10 @@ poetry.lock
 .env.test.local
 .env.production.local
 
+# API Keys and sensitive files
+*apikey.json
+kkucapikey.json
+
 # Next.js
 .next/
 out/

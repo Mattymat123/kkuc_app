@@ -37,11 +37,11 @@ This error means your browser extension (ad blocker, privacy extension) is block
 1. **Start all servers:**
    ```bash
    # Terminal 1 - Backend
-   cd langserve-assistant-ui/backend
+   cd KKUCAssistant/backend
    poetry run python -m app.server
    
    # Terminal 2 - Frontend
-   cd langserve-assistant-ui/frontend
+   cd KKUCAssistant/frontend
    yarn dev
    
    # Terminal 3 - Widget server

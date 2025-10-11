@@ -8,11 +8,11 @@ Simple embeddable script that loads your existing Next.js chat app in an iframe.
 
 ```bash
 # Terminal 1 - Start backend
-cd langserve-assistant-ui/backend
+cd KKUCAssistant/backend
 poetry run python -m app.server
 
 # Terminal 2 - Start frontend
-cd langserve-assistant-ui/frontend
+cd KKUCAssistant/frontend
 yarn dev
 ```
 
@@ -55,7 +55,7 @@ Example backend URL: `https://your-backend.railway.app`
 ### 2. Deploy Frontend to Vercel
 
 ```bash
-cd langserve-assistant-ui/frontend
+cd KKUCAssistant/frontend
 
 # Update the backend URL in app/api/chat/route.ts
 # Change: http://0.0.0.0:8000

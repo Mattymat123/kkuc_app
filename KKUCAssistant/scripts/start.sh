@@ -15,8 +15,8 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 PROJECT_ROOT="$( cd "$SCRIPT_DIR/.." && pwd )"
 
 # Backend and frontend paths
-BACKEND_DIR="$PROJECT_ROOT/langserve-assistant-ui/backend"
-FRONTEND_DIR="$PROJECT_ROOT/langserve-assistant-ui/frontend"
+BACKEND_DIR="$PROJECT_ROOT/backend"
+FRONTEND_DIR="$PROJECT_ROOT/frontend"
 VENV_DIR="$BACKEND_DIR/.venv"
 
 # Function to cleanup on exit
@@ -53,7 +53,7 @@ source "$VENV_DIR/bin/activate"
 # Check if requirements are already installed
 if [ ! -f "$VENV_DIR/.installed" ]; then
     pip install --upgrade pip
-    pip install -r "$PROJECT_ROOT/langserve-assistant-ui/requirements.txt"
+    pip install -r "$PROJECT_ROOT/requirements.txt"
     if [ $? -ne 0 ]; then
         echo -e "${RED}Failed to install backend dependencies${NC}"
         exit 1

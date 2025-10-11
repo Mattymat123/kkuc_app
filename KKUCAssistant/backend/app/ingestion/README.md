@@ -21,7 +21,7 @@ The pipeline performs these steps:
 ### 1. Install Dependencies
 
 ```bash
-cd langserve-assistant-ui/backend
+cd KKUCAssistant/backend
 poetry install
 ```
 
@@ -58,7 +58,7 @@ WEAVIATE_API_KEY=your_key_here
 Test the pipeline on a small subset first:
 
 ```bash
-cd langserve-assistant-ui/backend
+cd KKUCAssistant/backend
 python -m app.ingestion.run --test
 ```
 

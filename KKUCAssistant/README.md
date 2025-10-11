@@ -1,4 +1,4 @@
-# langserve-assistant-ui
+# KKUCAssistant
 
 A demonstration project that combines LangServe, LangGraph, and FastAPI to create an AI agent with a modern UI. The project uses [assistant-ui](https://www.assistant-ui.com/) and Next.js Vercel AI SDK for a seamless chat interface.
 
@@ -21,7 +21,7 @@ This project showcases:
 ## Project Structure
 
 ```
-langserve-assistant-ui/
+KKUCAssistant/
 ├── backend/         # FastAPI + LangServe server
 └── frontend/        # Next.js + assistant-ui client
 ```

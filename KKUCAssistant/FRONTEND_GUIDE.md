@@ -19,7 +19,7 @@ A comprehensive guide to customizing and extending the Assistant UI frontend. Th
 
 ```bash
 # Navigate to frontend directory
-cd langserve-assistant-ui/frontend
+cd KKUCAssistant/frontend
 
 # Install dependencies
 npm install
