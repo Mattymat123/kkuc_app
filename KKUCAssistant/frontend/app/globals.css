@@ -1,0 +1,6 @@
+@import "@assistant-ui/react/styles/index.css";
+@import "@assistant-ui/react-markdown/styles/markdown.css";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
