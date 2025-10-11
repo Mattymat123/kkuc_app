@@ -87,25 +87,38 @@ Returner kun forespørgslerne, en per linje, uden nummerering eller forklaring."
             context = "\n".join(context_parts)
         
         if context:
-            prompt = f"""Omformuler denne søgeforespørgsel til en enkel, klar søgning på dansk, med hensyntagen til samtalehistorikken.
+            prompt = f"""Du er en ekspert i at omformulere søgeforespørgsler til websøgning baseret på samtalehistorik.
 
 Samtalehistorik:
 {context}
 
-Nuværende spørgsmål: "{query}"
+Nuværende bruger-spørgsmål: "{query}"
 
-VIGTIGT: 
-- Hvis spørgsmålet bruger pronominer (hans, hendes, det, den, dem) eller vage referencer, SKAL du erstatte dem med den konkrete person/ting fra samtalehistorikken
-- Eksempel: Hvis samtalen handler om "direktør Nicolai Halberg" og spørgsmålet er "hvad er hans nummer?", omformuler til "Hvad er Nicolai Halbergs telefonnummer?"
-- Gør søgningen så specifik som muligt baseret på konteksten
+DIN OPGAVE:
+1. ANALYSER samtalehistorikken for at forstå den AFLEDTE KONTEKST af brugerens spørgsmål
+2. IDENTIFICER hvad brugeren EGENTLIG spørger om baseret på samtaleforløbet
+3. OMFORMULER spørgsmålet til en OPTIMAL websøgning der:
+   - Erstatter ALLE pronominer (hans, hendes, det, den, dem) med konkrete navne/ting fra samtalen
+   - Inkluderer RELEVANT kontekst fra samtalen der gør søgningen mere præcis
+   - Er formuleret som en KLAR, SPECIFIK søgeforespørgsel
+   - Fokuserer på den AFLEDTE BETYDNING af brugerens spørgsmål
 
-Returner kun den omformulerede forespørgsel, ingen forklaring."""
+EKSEMPLER:
+- Samtale om "direktør Nicolai Halberg" → Spørgsmål: "hvad er hans nummer?" → Omskrivning: "Nicolai Halberg telefonnummer kontaktoplysninger"
+- Samtale om "behandlingstilbud" → Spørgsmål: "hvor kan jeg få det?" → Omskrivning: "hvor kan jeg få behandling for stofmisbrug KKUC"
+- Samtale om "åbningstider" → Spørgsmål: "hvad med weekenden?" → Omskrivning: "KKUC åbningstider weekend lørdag søndag"
+
+KRITISK: Fokuser på den AFLEDTE KONTEKST - hvad brugeren EGENTLIG mener baseret på samtaleforløbet.
+
+Returner KUN den omformulerede søgeforespørgsel, ingen forklaring:"""
         else:
-            prompt = f"""Omformuler denne søgeforespørgsel til en enkel, klar søgning på dansk.
+            prompt = f"""Omformuler denne søgeforespørgsel til en optimal websøgning på dansk.
 
 Original: "{query}"
 
-Returner kun den omformulerede forespørgsel, ingen forklaring."""
+Gør søgningen klar og specifik for KKUC's hjemmeside.
+
+Returner kun den omformulerede forespørgsel, ingen forklaring:"""
 
         try:
             response = self.openai_client.chat.completions.create(

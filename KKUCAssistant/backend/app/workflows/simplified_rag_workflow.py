@@ -169,9 +169,12 @@ Vigtige retningslinjer:
         top_chunks = state["search_results"][:10]
         print(f"  ✓ Passing top {len(top_chunks)} chunks to LLM for relevance assessment")
         
-        # Generate answer - LLM will decide which chunk is most relevant
+        # Get conversation history from state
+        conversation_history = state.get("messages", [])
+        
+        # Generate answer - LLM will use both chunks and conversation history
         gen_start = time.time()
-        answer = self._generate_answer_with_selection(state["query"], top_chunks)
+        answer = self._generate_answer_with_selection(state["query"], top_chunks, conversation_history)
         gen_time = time.time() - gen_start
         
         # Answer now contains everything (link + content) or just content if no relevant source
@@ -221,8 +224,8 @@ Vigtige retningslinjer:
         return dict(sorted_urls[:3])  # Keep top 3 URLs
     
     @traceable(name="Generate Answer with Chunk Selection")
-    def _generate_answer_with_selection(self, query: str, chunks: List) -> str:
-        """Generate answer - LLM selects most relevant chunk and extracts its URL"""
+    def _generate_answer_with_selection(self, query: str, chunks: List, conversation_history: List[BaseMessage] = None) -> str:
+        """Generate answer - LLM uses both web search chunks AND conversation history"""
         
         # Format chunks with metadata for LLM to choose from
         chunks_context = []
@@ -234,37 +237,64 @@ Vigtige retningslinjer:
                 f"Indhold: {chunk.content}\n"
             )
         
-        context = "\n---\n".join(chunks_context)
+        web_context = "\n---\n".join(chunks_context)
         
-        # Create prompt that instructs LLM to use all relevant chunks
-        prompt = f"""Du får flere informationsstykker fra KKUC's hjemmeside. Din opgave er at:
+        # Format conversation history
+        conversation_context = ""
+        if conversation_history:
+            recent_messages = conversation_history[-10:]  # Last 5 exchanges
+            context_parts = []
+            for msg in recent_messages:
+                role = "Bruger" if isinstance(msg, HumanMessage) else "Assistent"
+                context_parts.append(f"{role}: {msg.content}")
+            conversation_context = "\n\n".join(context_parts)
+        
+        # Create prompt that instructs LLM to use BOTH sources
+        prompt = f"""Du får to informationskilder:
+1. Informationsstykker fra KKUC's hjemmeside (web søgning)
+2. Tidligere samtalehistorik
 
-1. VURDERE om NOGEN af informationsstykkerne er relevante for brugerens spørgsmål
-2. HVIS der er relevant information:
-   - Start dit svar med linket til den MEST relevante chunk i dette format: 🔗 [Titel](URL)
-   - Saml information fra ALLE relevante chunks (ikke kun én)
-   - Giv et KORT, empatisk svar (2-3 korte afsnit) med relevante emojis 💙
-   - Fokuser DIREKTE på at besvare brugerens spørgsmål - gå lige til sagen
-   - Brug overskrifter (## og ###) kun hvis det giver mening
-3. HVIS INGEN af informationsstykkerne er relevante:
-   - Inkluder IKKE noget link
-   - Skriv KORT og empatisk: "Jeg har desværre ikke information om dette emne på KKUC's hjemmeside. 💙"
-   - Generer IKKE noget svar baseret på din egen viden
-   - Opfind IKKE information
+Din opgave er at besvare brugerens spørgsmål ved at bruge BEGGE kilder:
+
+SAMTALEHISTORIK:
+{conversation_context if conversation_context else "Ingen tidligere samtale"}
+
+WEB SØGNING - Informationsstykker fra KKUC's hjemmeside:
+{web_context}
 
 Brugerens spørgsmål: {query}
 
-Tilgængelige informationsstykker:
-{context}
+SÅDAN BESVARER DU:
 
-KRITISK VIGTIGT: 
+1. HVIS spørgsmålet kan besvares fra SAMTALEHISTORIKKEN (f.eks. "hvad var det nummer?", "fortæl mig mere om det"):
+   - Besvar DIREKTE baseret på samtalehistorikken
+   - Inkluder IKKE noget link
+   - Vær kort og præcis (1-2 afsnit)
+   - Brug emojis 💙
+
+2. HVIS spørgsmålet kræver NY information fra KKUC's hjemmeside:
+   - Vurder om NOGEN af web chunks er relevante
+   - HVIS JA: Start dit svar med linket til den MEST relevante chunk: 🔗 [Titel](URL)
+   - Saml information fra ALLE relevante chunks
+   - Giv et KORT, empatisk svar (2-3 afsnit) med emojis 💙
+   - HVIS NEJ: Skriv "Jeg har desværre ikke information om dette emne på KKUC's hjemmeside. 💙"
+
+3. HVIS spørgsmålet kan besvares ved at KOMBINERE begge kilder:
+   - Brug information fra samtalen som kontekst
+   - Tilføj ny information fra web chunks
+   - Inkluder link hvis du bruger web chunks: 🔗 [Titel](URL)
+
+KRITISK VIGTIGT - ANTI-HALLUCINATION REGLER:
 - Besvar brugerens spørgsmål DIREKTE - gå lige til sagen
-- Brug information fra ALLE relevante chunks, ikke kun én
-- Hold svaret KORT (2-3 afsnit) men informativt
+- Brug BÅDE samtalehistorik og web chunks når det er relevant
+- Hold svaret KORT (1-3 afsnit) men informativt
 - Vær empatisk og brug emojis 💙 🌟 ✨ 💪
-- Vær MEGET streng med relevans - hvis informationen ikke direkte besvarer spørgsmålet, sig at du ikke har information
-- Generer ALDRIG svar baseret på din egen viden - kun fra de givne chunks
+- GENERER ALDRIG svar baseret på din egen viden - KUN fra de givne kilder
+- VERIFICER at al information kommer DIREKTE fra chunks eller samtalehistorik
 - Hvis du inkluderer et link, kopier URL'en PRÆCIST fra den mest relevante chunk
+- OPFIND ALDRIG telefonnumre, adresser, navne eller andre fakta
+- Hvis informationen ikke er i kilderne, sig ÆRLIGT at du ikke har den information
+- DOBBELT-TJEK at alle fakta (numre, navne, adresser) matcher præcist med kilderne
 
 Svar:"""
 
@@ -280,11 +310,13 @@ Svar:"""
             
             answer = "".join(answer_chunks).strip()
             
-            # Log which chunk was selected (if any)
+            # Log what sources were used
             if "🔗" in answer:
-                print("  ✓ LLM selected a relevant chunk and included link")
+                print("  ✓ LLM used web search and included link")
+            elif conversation_context:
+                print("  ℹ️  LLM answered from conversation history")
             else:
-                print("  ℹ️  LLM determined no chunks were relevant - no link included")
+                print("  ℹ️  LLM determined no relevant information available")
             
             return answer
             

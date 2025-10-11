@@ -45,7 +45,7 @@ export const Thread: FC = () => {
             ["--thread-max-width" as string]: "44rem",
           }}
         >
-          <ThreadPrimitive.Viewport className="aui-thread-viewport relative flex flex-1 flex-col overflow-x-auto overflow-y-scroll px-4">
+          <ThreadPrimitive.Viewport className="aui-thread-viewport relative flex flex-1 flex-col overflow-x-auto overflow-y-scroll px-4 pb-4">
             <ThreadPrimitive.If empty>
               <ThreadWelcome />
             </ThreadPrimitive.If>
@@ -61,9 +61,9 @@ export const Thread: FC = () => {
             <ThreadPrimitive.If empty={false}>
               <div className="aui-thread-viewport-spacer min-h-8 grow" />
             </ThreadPrimitive.If>
-
-            <Composer />
           </ThreadPrimitive.Viewport>
+
+          <Composer />
         </ThreadPrimitive.Root>
       </MotionConfig>
     </LazyMotion>
@@ -93,18 +93,18 @@ const ThreadWelcome: FC = () => {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 10 }}
-            className="aui-thread-welcome-message-motion-1 text-2xl font-semibold"
+            className="aui-thread-welcome-message-motion-1 text-3xl font-semibold"
           >
-            Hello there!
+            Hejsa! 👋
           </m.div>
           <m.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 10 }}
             transition={{ delay: 0.1 }}
-            className="aui-thread-welcome-message-motion-2 text-2xl text-muted-foreground/65"
+            className="aui-thread-welcome-message-motion-2 mt-5 text-xl text-muted-foreground/65"
           >
-            How can I help you today?
+            Spørg ind til KKUC eller book din første tid
           </m.div>
         </div>
       </div>
@@ -115,70 +115,81 @@ const ThreadWelcome: FC = () => {
 
 const ThreadSuggestions: FC = () => {
   return (
-    <div className="aui-thread-welcome-suggestions grid w-full gap-2 pb-4 @md:grid-cols-2">
+    <div className="aui-thread-welcome-suggestions flex w-full flex-col gap-3 pb-4 px-4">
       {[
         {
-          title: "What's the weather",
-          label: "in San Francisco?",
-          action: "What's the weather in San Francisco?",
+          text: "Hvad laver KKUC?",
+          prompt: "Hvad laver KKUC?",
         },
         {
-          title: "Explain React hooks",
-          label: "like useState and useEffect",
-          action: "Explain React hooks like useState and useEffect",
+          text: "Hvilke behandlinger tilbyder I?",
+          prompt: "Hvilke behandlinger tilbyder I?",
         },
-        {
-          title: "Write a SQL query",
-          label: "to find top customers",
-          action: "Write a SQL query to find top customers",
-        },
-        {
-          title: "Create a meal plan",
-          label: "for healthy weight loss",
-          action: "Create a meal plan for healthy weight loss",
-        },
-      ].map((suggestedAction, index) => (
+      ].map((suggestion, index) => (
         <m.div
+          key={suggestion.text}
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: 20 }}
-          transition={{ delay: 0.05 * index }}
-          key={`suggested-action-${suggestedAction.title}-${index}`}
-          className="aui-thread-welcome-suggestion-display [&:nth-child(n+3)]:hidden @md:[&:nth-child(n+3)]:block"
+          transition={{ delay: 0.15 + index * 0.1 }}
+          className="aui-thread-welcome-suggestion-display"
         >
           <ThreadPrimitive.Suggestion
-            prompt={suggestedAction.action}
+            prompt={suggestion.prompt}
             send
             asChild
           >
             <Button
-              variant="ghost"
-              className="aui-thread-welcome-suggestion h-auto w-full flex-1 flex-wrap items-start justify-start gap-1 rounded-3xl border px-5 py-4 text-left text-sm @md:flex-col dark:hover:bg-accent/60"
-              aria-label={suggestedAction.action}
+              variant="outline"
+              className="w-full rounded-3xl px-7 py-4 text-left text-lg transition-all duration-200 hover:scale-[1.02] hover:shadow-md"
+              style={{ 
+                borderColor: 'rgba(223, 97, 65, 0.3)',
+              }}
             >
-              <span className="aui-thread-welcome-suggestion-text-1 font-medium">
-                {suggestedAction.title}
-              </span>
-              <span className="aui-thread-welcome-suggestion-text-2 text-muted-foreground">
-                {suggestedAction.label}
-              </span>
+              {suggestion.text}
             </Button>
           </ThreadPrimitive.Suggestion>
         </m.div>
       ))}
+      
+      <m.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: 20 }}
+        transition={{ delay: 0.35 }}
+        className="aui-thread-welcome-suggestion-display mt-2"
+      >
+        <Button
+          variant="default"
+          className="w-full rounded-3xl px-8 py-4 text-lg transition-all duration-200 hover:scale-105 hover:shadow-lg"
+          style={{ 
+            backgroundColor: 'rgba(223, 97, 65, 0.85)', 
+            color: 'white',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = '#DF6141';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = 'rgba(223, 97, 65, 0.85)';
+          }}
+          onClick={() => window.open('https://kkuc.dk/kontakt', '_blank')}
+        >
+          Book din første tid
+        </Button>
+      </m.div>
     </div>
   );
 };
 
 const Composer: FC = () => {
   return (
-    <div className="aui-composer-wrapper sticky bottom-0 mx-auto flex w-full max-w-[var(--thread-max-width)] flex-col gap-4 overflow-visible rounded-t-3xl bg-background pb-4 md:pb-6">
+    <div className="aui-composer-wrapper sticky bottom-0 mx-auto flex w-full max-w-[var(--thread-max-width)] flex-col gap-4 overflow-visible rounded-t-3xl bg-background px-4 pb-4 md:pb-6">
       <ThreadScrollToBottom />
       <ComposerPrimitive.Root className="aui-composer-root relative flex w-full flex-col rounded-3xl border border-border bg-muted px-1 pt-2 shadow-[0_9px_9px_0px_rgba(0,0,0,0.01),0_2px_5px_0px_rgba(0,0,0,0.06)] dark:border-muted-foreground/15">
         <ComposerAttachments />
         <ComposerPrimitive.Input
-          placeholder="Send a message..."
-          className="aui-composer-input mb-1 max-h-32 min-h-16 w-full resize-none bg-transparent px-3.5 pt-1.5 pb-3 text-base outline-none placeholder:text-muted-foreground focus:outline-primary"
+          placeholder="Spørg ind til KKUC.."
+          className="aui-composer-input mb-1 max-h-32 min-h-16 w-full resize-none bg-transparent px-5 pt-2 pb-4 text-lg outline-none placeholder:text-muted-foreground focus:outline-primary"
           rows={1}
           autoFocus
           aria-label="Message input"
@@ -191,9 +202,7 @@ const Composer: FC = () => {
 
 const ComposerAction: FC = () => {
   return (
-    <div className="aui-composer-action-wrapper relative mx-1 mt-2 mb-2 flex items-center justify-between">
-      <ComposerAddAttachment />
-
+    <div className="aui-composer-action-wrapper relative mx-1 mt-2 mb-2 flex items-center justify-end">
       <ThreadPrimitive.If running={false}>
         <ComposerPrimitive.Send asChild>
           <TooltipIconButton
@@ -244,7 +253,7 @@ const AssistantMessage: FC = () => {
         className="aui-assistant-message-root relative mx-auto w-full max-w-[var(--thread-max-width)] animate-in py-4 duration-150 ease-out fade-in slide-in-from-bottom-1 last:mb-24"
         data-role="assistant"
       >
-        <div className="aui-assistant-message-content mx-2 leading-7 break-words text-foreground">
+        <div className="aui-assistant-message-content mx-2 leading-8 break-words text-foreground text-lg">
           <MessagePrimitive.Parts
             components={{
               Text: MarkdownText,
@@ -252,6 +261,36 @@ const AssistantMessage: FC = () => {
             }}
           />
           <MessageError />
+          
+          {/* Book appointment button - only show on last message when not running */}
+          <MessagePrimitive.If last>
+            <ThreadPrimitive.If running={false}>
+              <m.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.2 }}
+                className="mt-6"
+              >
+                <Button
+                  variant="default"
+                  className="rounded-3xl px-8 py-4 text-lg transition-all duration-200 hover:scale-105 hover:shadow-lg"
+                  style={{ 
+                    backgroundColor: 'rgba(223, 97, 65, 0.85)', 
+                    color: 'white',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = '#DF6141';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = 'rgba(223, 97, 65, 0.85)';
+                  }}
+                  onClick={() => window.open('https://kkuc.dk/kontakt', '_blank')}
+                >
+                  Book din første tid
+                </Button>
+              </m.div>
+            </ThreadPrimitive.If>
+          </MessagePrimitive.If>
         </div>
 
         <div className="aui-assistant-message-footer mt-2 ml-2 flex">
@@ -264,30 +303,7 @@ const AssistantMessage: FC = () => {
 };
 
 const AssistantActionBar: FC = () => {
-  return (
-    <ActionBarPrimitive.Root
-      hideWhenRunning
-      autohide="not-last"
-      autohideFloat="single-branch"
-      className="aui-assistant-action-bar-root col-start-3 row-start-2 -ml-1 flex gap-1 text-muted-foreground data-floating:absolute data-floating:rounded-md data-floating:border data-floating:bg-background data-floating:p-1 data-floating:shadow-sm"
-    >
-      <ActionBarPrimitive.Copy asChild>
-        <TooltipIconButton tooltip="Copy">
-          <MessagePrimitive.If copied>
-            <CheckIcon />
-          </MessagePrimitive.If>
-          <MessagePrimitive.If copied={false}>
-            <CopyIcon />
-          </MessagePrimitive.If>
-        </TooltipIconButton>
-      </ActionBarPrimitive.Copy>
-      <ActionBarPrimitive.Reload asChild>
-        <TooltipIconButton tooltip="Refresh">
-          <RefreshCwIcon />
-        </TooltipIconButton>
-      </ActionBarPrimitive.Reload>
-    </ActionBarPrimitive.Root>
-  );
+  return null; // Removed action bar (copy and refresh buttons)
 };
 
 const UserMessage: FC = () => {
@@ -300,7 +316,7 @@ const UserMessage: FC = () => {
         <UserMessageAttachments />
 
         <div className="aui-user-message-content-wrapper relative col-start-2 min-w-0">
-          <div className="aui-user-message-content rounded-3xl bg-muted px-5 py-2.5 break-words text-foreground">
+          <div className="aui-user-message-content rounded-3xl px-7 py-3.5 break-words text-foreground text-lg" style={{ backgroundColor: 'rgba(223, 97, 65, 0.15)' }}>
             <MessagePrimitive.Parts />
           </div>
           <div className="aui-user-action-bar-wrapper absolute top-1/2 left-0 -translate-x-full -translate-y-1/2 pr-2">
