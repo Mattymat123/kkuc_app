@@ -1,26 +1,17 @@
 'use client';
 
-import { useChat } from 'ai/react';
-import { AssistantModal } from '@assistant-ui/react';
-import { makeMarkdownText } from '@assistant-ui/react-markdown';
-import { useVercelUseChatRuntime } from '@assistant-ui/react-ai-sdk';
-import { GetStockPriceToolUI } from './GetStockPriceToolUI';
-import { ToolFallback } from './ToolFallBack';
-
-const MarkdownText = makeMarkdownText();
+import { AssistantRuntimeProvider } from '@assistant-ui/react';
+import { useDataStreamRuntime } from '@assistant-ui/react-data-stream';
+import { AssistantModal } from '@/components/assistant-ui/assistant-modal';
 
 export function MyAssistantModal() {
-  const chat = useChat({
+  const runtime = useDataStreamRuntime({
     api: '/api/chat',
   });
 
-  const runtime = useVercelUseChatRuntime(chat);
-
   return (
-    <AssistantModal
-      runtime={runtime}
-      assistantMessage={{ components: { Text: MarkdownText, ToolFallback } }}
-      tools={[GetStockPriceToolUI]}
-    />
+    <AssistantRuntimeProvider runtime={runtime}>
+      <AssistantModal />
+    </AssistantRuntimeProvider>
   );
 }

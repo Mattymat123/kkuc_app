@@ -21,6 +21,8 @@ firecrawl-py = "^1.0.0"
 openai = "^1.0.0"
 cohere = "^5.11.0"
 weaviate-client = "^4.9.0"
+rank-bm25 = "^0.2.2"
+langsmith = "^0.1.0"
 
 
 [tool.poetry.group.dev.dependencies]

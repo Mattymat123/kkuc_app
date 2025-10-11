@@ -1,51 +1,61 @@
 import { type Message } from 'ai';
-import * as LangServeAdapter from '@/app/lib/langserve-adapter';
 
-export const maxDuration = 30;
+export const maxDuration = 60; // Increase timeout for RAG operations
 
 export async function POST(req: Request) {
   const { messages }: { messages: Message[] } = await req.json();
 
-  const response = await fetch(
-    'http://0.0.0.0:8000/agent/stream_events',
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Accept: 'text/event-stream',
-      },
-      body: JSON.stringify({
-        input: { messages },
-        config: {
-          version: 'v2',
-          configurable: {
-            session_id: crypto.randomUUID(),
-          },
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 55000); // 55 second timeout
+
+    const response = await fetch(
+      'http://0.0.0.0:8000/chat',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
         },
-        streamMode: 'values',
-      }),
+        body: JSON.stringify({ messages }),
+        signal: controller.signal,
+      }
+    );
+
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      console.error(`[ERROR] Server responded with status ${response.status}`);
+      const errorText = await response.text();
+      console.error(`[ERROR] Response body: ${errorText}`);
+      throw new Error(`HTTP error! status: ${response.status}`);
     }
-  );
 
-  if (!response.ok) {
-    console.error(`[ERROR] Server responded with status ${response.status}`);
-    throw new Error(`HTTP error! status: ${response.status}`);
-  }
+    if (!response.body) {
+      console.error('[ERROR] No response body received');
+      throw new Error('No response body received');
+    }
 
-  if (!response.body) {
-    console.error('[ERROR] No response body received');
-    throw new Error('No response body received');
-  }
-
-  console.log('[DEBUG] Setting up stream processing pipeline...');
-  const stream = response.body.pipeThrough(new TextDecoderStream()).pipeThrough(
-    new TransformStream({
-      transform(chunk, controller) {
-        LangServeAdapter.parseSSEChunkToJSON(chunk, controller);
+    console.log('[DEBUG] Streaming response from backend...');
+    
+    // Return the stream directly with proper headers
+    return new Response(response.body, {
+      headers: {
+        'Content-Type': 'text/plain; charset=utf-8',
+        'X-Vercel-AI-Data-Stream': 'v1',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive',
       },
-    })
-  );
-
-  console.log('[DEBUG] Stream pipeline setup complete, returning response...');
-  return LangServeAdapter.toDataStreamResponse(stream);
+    });
+  } catch (error) {
+    console.error('[ERROR] Failed to process request:', error);
+    
+    // Return error response
+    return new Response(
+      JSON.stringify({ error: 'Failed to process request', details: String(error) }),
+      {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' },
+      }
+    );
+  }
 }

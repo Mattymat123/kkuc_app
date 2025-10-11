@@ -1,26 +1,17 @@
 'use client';
 
-// import { useEdgeRuntime } from "@assistant-ui/react";
-import { useChat } from 'ai/react';
-import { Thread } from '@assistant-ui/react';
-import { useVercelUseChatRuntime } from '@assistant-ui/react-ai-sdk';
-import { MarkdownText } from '@/components/assistant-ui/markdown-text';
-import { GetStockPriceToolUI } from './GetStockPriceToolUI';
-import { ToolFallback } from './ToolFallBack';
+import { AssistantRuntimeProvider } from '@assistant-ui/react';
+import { useDataStreamRuntime } from '@assistant-ui/react-data-stream';
+import { Thread } from '@/components/assistant-ui/thread';
 
 export function MyAssistant() {
-  // const runtime = useEdgeRuntime({ api: "/api/chat" });
-  const chat = useChat({
+  const runtime = useDataStreamRuntime({
     api: '/api/chat',
   });
 
-  const runtime = useVercelUseChatRuntime(chat);
-
   return (
-    <Thread
-      runtime={runtime}
-      assistantMessage={{ components: { Text: MarkdownText, ToolFallback } }}
-      tools={[GetStockPriceToolUI]}
-    />
+    <AssistantRuntimeProvider runtime={runtime}>
+      <Thread />
+    </AssistantRuntimeProvider>
   );
 }

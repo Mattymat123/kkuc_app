@@ -374,7 +374,6 @@ Write 1-2 sentences in Danish explaining what this chunk discusses in the contex
             elapsed_time = time.time() - start_time
             print("="*60)
             print("✅ INGESTION COMPLETE!")
-            print("="*60)
             print(f"📊 Statistics:")
             print(f"  • Pages crawled: {self.stats['pages_crawled']}")
             print(f"  • Chunks created: {self.stats['chunks_created']}")

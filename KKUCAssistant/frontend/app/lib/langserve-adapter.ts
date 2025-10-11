@@ -1,13 +1,14 @@
 // Refer to https://github.com/vercel/ai/blob/main/packages/ai/streams/langchain-adapter.ts
 import { mergeStreams } from './merge-stream';
 import { prepareResponseHeaders } from './prepare-response-header';
-import { AIStreamCallbacksAndOptions, createCallbacksTransformer, formatStreamPart } from 'ai';
+import { AIStreamCallbacksAndOptions, formatStreamPart } from 'ai';
 import { StreamData } from 'ai';
 
 // LC stream event v2
 type LangChainStreamEvent = {
   event: string;
-  data: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  data: Record<string, any>;
   name?: string;
 };
 
@@ -23,9 +24,8 @@ export function parseSSEChunkToJSON(
         const jsonData = JSON.parse(line.slice(6)) as LangChainStreamEvent;
         controller.enqueue(jsonData);
       }
-    } catch (e) {
-      console.error('[ERROR] Error processing line:', e);
-      console.error('[ERROR] Problematic line:', line);
+    } catch {
+      // Silently skip malformed lines
     }
   }
 }
@@ -33,7 +33,7 @@ export function parseSSEChunkToJSON(
 function tryParseJSON(content: string) {
   try {
     return JSON.parse(content);
-  } catch (e) {
+  } catch {
     return content;
   }
 }
@@ -47,24 +47,27 @@ The following streams are supported:
  */
 // Refer: https://github.com/vercel/ai/blob/main/packages/ai/core/generate-text/stream-text.ts#L1136
 export function toDataStream(
-  stream: ReadableStream<LangChainStreamEvent>,
-  callbacks?: AIStreamCallbacksAndOptions
+  stream: ReadableStream<LangChainStreamEvent>
 ) {
   return (
     stream
       .pipeThrough(
         new TransformStream<LangChainStreamEvent>({
           transform: async (value, controller) => {
-            console.log(
-              'First transformer input:',
-              JSON.stringify(value, null, 2)
-            );
+            // Only log important events to reduce console noise
+            if (value.event === 'on_chat_model_stream' || value.event === 'on_chat_model_end' || value.event === 'on_chain_end') {
+              console.log('Processing event:', value.event, value.name);
+            }
+            
             if ('event' in value) {
               if (value.event === 'on_chat_model_stream') {
-                controller.enqueue({
-                  type: 'text',
-                  content: value.data.chunk.content,
-                });
+                const content = value.data?.chunk?.content;
+                if (content) {
+                  controller.enqueue({
+                    type: 'text',
+                    content: content,
+                  });
+                }
               } else if (value.event === 'on_chat_model_end') {
                 if (
                   value.data.output.content === '' &&
@@ -89,9 +92,22 @@ export function toDataStream(
                   toolCallId: value.data.output.tool_call_id,
                   result: tryParseJSON(value.data.output.content),
                 });
+              } else if (value.event === 'on_chain_end' && value.name === 'LangGraph') {
+                // Capture the final complete message from the agent (includes links)
+                console.log('LangGraph chain ended, capturing final message');
+                if (value.data?.output?.messages && value.data.output.messages.length > 0) {
+                  const finalMessage = value.data.output.messages[value.data.output.messages.length - 1];
+                  if (finalMessage?.content) {
+                    console.log('Final complete message:', finalMessage.content);
+                    controller.enqueue({
+                      type: 'text',
+                      content: finalMessage.content,
+                    });
+                  }
+                }
               }
+              // Silently ignore other events (on_chain_start, on_llm_start, etc.)
             }
-            console.log('No matching conditions found for value');
           },
         })
       )
@@ -116,7 +132,7 @@ export function toDataStreamResponse(
     callbacks?: AIStreamCallbacksAndOptions;
   }
 ) {
-  const dataStream = toDataStream(stream, options?.callbacks);
+  const dataStream = toDataStream(stream);
   const data = options?.data;
   const init = options?.init;
 

@@ -24,7 +24,7 @@ class Config:
     TARGET_URL = "https://kkuc.dk"
     
     # Firecrawl settings
-    FIRECRAWL_MAX_PAGES = None  # None = crawl all pages
+    FIRECRAWL_MAX_PAGES = 100  # Maximum pages to crawl (set to reasonable limit)
     FIRECRAWL_FORMATS = ['markdown', 'html']
     
     # Claude settings (via OpenRouter)
