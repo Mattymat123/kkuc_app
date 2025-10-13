@@ -19,3 +19,10 @@ firecrawl-py==1.10.0
 
 # Additional required dependencies
 httpx>=0.25.0
+
+# Google Calendar API dependencies
+google-auth==2.23.0
+google-auth-oauthlib==1.1.0
+google-auth-httplib2==0.1.1
+google-api-python-client==2.100.0
+pytz==2025.2

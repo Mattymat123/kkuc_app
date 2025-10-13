@@ -7,6 +7,7 @@ import { Thread } from '@/components/assistant-ui/thread';
 export function MyAssistant() {
   const runtime = useDataStreamRuntime({
     api: '/api/chat',
+    // booking_state is now managed server-side in route.ts
   });
 
   return (

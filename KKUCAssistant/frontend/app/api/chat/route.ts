@@ -1,14 +1,17 @@
 import { type Message } from 'ai';
 
-export const maxDuration = 60; // Increase timeout for RAG operations
+export const maxDuration = 60;
 
 export async function POST(req: Request) {
-  const { messages }: { messages: Message[] } = await req.json();
+  const body = await req.json();
+  const { messages }: { messages: Message[] } = body;
 
   try {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 55000); // 55 second timeout
+    const timeoutId = setTimeout(() => controller.abort(), 55000);
 
+    // Simply proxy to the backend /chat endpoint
+    // The backend handles thread management internally
     const response = await fetch(
       'http://0.0.0.0:8000/chat',
       {
@@ -37,7 +40,7 @@ export async function POST(req: Request) {
 
     console.log('[DEBUG] Streaming response from backend...');
     
-    // Return the stream directly with proper headers
+    // Return the stream directly
     return new Response(response.body, {
       headers: {
         'Content-Type': 'text/plain; charset=utf-8',
@@ -49,7 +52,6 @@ export async function POST(req: Request) {
   } catch (error) {
     console.error('[ERROR] Failed to process request:', error);
     
-    // Return error response
     return new Response(
       JSON.stringify({ error: 'Failed to process request', details: String(error) }),
       {
