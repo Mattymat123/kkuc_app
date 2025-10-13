@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat Widget Test Page</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        h1 {
+            color: #333;
+        }
+        .info {
+            background: #f4f4f4;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        code {
+            background: #e8e8e8;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: monospace;
+        }
+        .button {
+            background: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+        }
+        .button:hover {
+            background: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <h1>Chat Widget Test Page</h1>
+    
+    <div class="info">
+        <h2>Testing Instructions</h2>
+        <ol>
+            <li>Make sure your backend is running on <code>http://localhost:8000</code></li>
+            <li>Make sure your frontend is running on <code>http://localhost:3000</code></li>
+            <li>Serve this folder with: <code>python3 -m http.server 8080</code></li>
+            <li>Open this page at <code>http://localhost:8080/test.html</code></li>
+            <li>The chat widget should load automatically</li>
+        </ol>
+    </div>
+
+    <div class="info">
+        <h2>Manual Injection Test</h2>
+        <p>Click the button below to manually inject the widget script:</p>
+        <button class="button" onclick="loadWidget()">Load Widget</button>
+        <button class="button" onclick="removeWidget()">Remove Widget</button>
+    </div>
+
+    <div class="info">
+        <h2>Sample Content</h2>
+        <p>This is a test page with some sample content. The chat widget should appear as an overlay on this page.</p>
+        <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p>
+        <p>Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+    </div>
+
+    <!-- Auto-load the widget -->
+    <script src="widget.js"></script>
+
+    <!-- Manual controls -->
+    <script>
+        function loadWidget() {
+            if (window.chatWidgetLoaded) {
+                alert('Widget is already loaded!');
+                return;
+            }
+            var script = document.createElement('script');
+            script.src = 'widget.js';
+            document.body.appendChild(script);
+        }
+
+        function removeWidget() {
+            var iframe = document.querySelector('iframe[src*="localhost:3000"]');
+            if (iframe) {
+                iframe.remove();
+                window.chatWidgetLoaded = false;
+                alert('Widget removed! Refresh page or click "Load Widget" to reload.');
+            } else {
+                alert('No widget found to remove.');
+            }
+        }
+    </script>
+</body>
+</html>

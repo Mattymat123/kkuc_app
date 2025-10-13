@@ -52,7 +52,14 @@ class KKUCAgent:
         last_message = state["messages"][-1]
         
         if isinstance(last_message, HumanMessage):
+            # Handle both string and list content
             user_query = last_message.content
+            if isinstance(user_query, list):
+                # Extract text from list of content blocks
+                user_query = " ".join([
+                    block.get("text", "") if isinstance(block, dict) else str(block)
+                    for block in user_query
+                ])
             
             # Pass conversation history to RAG workflow (excluding current query)
             conversation_history = state["messages"][:-1] if len(state["messages"]) > 1 else []
