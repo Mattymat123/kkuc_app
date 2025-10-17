@@ -14,6 +14,11 @@ class CalendarState(TypedDict):
     messages: Annotated[List[BaseMessage], add]
     booking_active: bool
     booking_context: Optional[Dict[str, Any]]
+    # booking_context contains:
+    # - step: str (current step in workflow)
+    # - available_slots: List[Dict] (available time slots)
+    # - selected_slot: Dict (user's selected time slot)
+    # - booking_details: Dict (substance_type, kommune, age_group, notes)
 
 
 class CalendarWorkflow:
@@ -57,9 +62,13 @@ class CalendarWorkflow:
             elif current_step == "select_slot":
                 return self._step2_select_slot(state, booking_context)
             
-            # Step 3: Confirm and book
+            # Step 3: Collect booking details
+            elif current_step == "collect_details":
+                return self._step3_collect_details(state, booking_context)
+            
+            # Step 4: Confirm and book
             elif current_step == "confirm_booking":
-                return self._step3_confirm_and_book(state, booking_context)
+                return self._step4_confirm_and_book(state, booking_context)
             
             else:
                 # Unknown step, reset
@@ -120,7 +129,7 @@ class CalendarWorkflow:
         }
     
     def _step2_select_slot(self, state: Dict[str, Any], booking_context: Dict) -> Dict[str, Any]:
-        """Step 2: Process slot selection"""
+        """Step 2: Process slot selection and show booking details form"""
         slots = booking_context.get("available_slots", [])
         last_msg = state["messages"][-1]
         user_input = last_msg.content
@@ -134,13 +143,18 @@ class CalendarWorkflow:
             if 0 <= slot_num < len(slots):
                 selected_slot = slots[slot_num]
                 
-                message = f"""Du har valgt:
-📅 {selected_slot['day']}, {selected_slot['date']} kl. {selected_slot['time']}
+                # Format slot data for BookingDetailsForm
+                import json
+                form_data = json.dumps({"selectedSlot": selected_slot})
+                
+                message = f"""📋 Udfyld booking detaljer:
 
-Bekræft ved at skrive 'ja' eller 'annuller' for at fortryde."""
+```booking-details
+{form_data}
+```"""
                 
                 print(f"   ✅ Slot selected: {selected_slot['day']} {selected_slot['time']}")
-                print("   ⏳ Waiting for confirmation...")
+                print("   ⏳ Waiting for booking details form submission...")
                 
                 return {
                     "messages": [AIMessage(content=message)],
@@ -148,7 +162,7 @@ Bekræft ved at skrive 'ja' eller 'annuller' for at fortryde."""
                     "booking_context": {
                         "available_slots": slots,
                         "selected_slot": selected_slot,
-                        "step": "confirm_booking"
+                        "step": "collect_details"
                     }
                 }
             else:
@@ -164,21 +178,106 @@ Bekræft ved at skrive 'ja' eller 'annuller' for at fortryde."""
                 "booking_context": booking_context
             }
     
-    def _step3_confirm_and_book(self, state: Dict[str, Any], booking_context: Dict) -> Dict[str, Any]:
-        """Step 3: Confirm and book appointment"""
+    def _step3_collect_details(self, state: Dict[str, Any], booking_context: Dict) -> Dict[str, Any]:
+        """Step 3: Collect booking details from form"""
         last_msg = state["messages"][-1]
         user_input = last_msg.content
         
         if isinstance(user_input, list):
             user_input = " ".join([str(block.get("text", "")) if isinstance(block, dict) else str(block) for block in user_input])
         
-        user_input_lower = user_input.lower().strip()
-        
-        if "ja" in user_input_lower or "yes" in user_input_lower:
+        # Try to parse JSON form data
+        try:
+            import json
+            booking_details = json.loads(user_input.strip())
+            
+            print(f"   📝 Raw booking details received: {booking_details}")
+            
+            # Validate required fields (notes is optional)
+            required_fields = ['name', 'phone', 'substanceType', 'kommune', 'ageGroup']
+            if not all(field in booking_details for field in required_fields):
+                return {
+                    "messages": [AIMessage(content="Fejl: Udfyld venligst alle felter i formularen.")],
+                    "booking_active": True,
+                    "booking_context": booking_context
+                }
+            
+            # Validate phone number (Danish format)
+            import re
+            phone = booking_details.get('phone', '').replace(' ', '').replace('-', '').replace('(', '').replace(')', '')
+            danish_phone_regex = r'^(\+45)?[2-9]\d{7}$'
+            if not re.match(danish_phone_regex, phone):
+                return {
+                    "messages": [AIMessage(content="Fejl: Ugyldigt telefonnummer. Indtast et gyldigt dansk telefonnummer (8 cifre).")],
+                    "booking_active": True,
+                    "booking_context": booking_context
+                }
+            
             selected_slot = booking_context.get("selected_slot")
             
-            print(f"   ⏳ Booking appointment...")
-            result = self.calendar_tools.book_appointment(selected_slot)
+            # Format booking confirmation data for BookingConfirmation component
+            import json
+            confirmation_data = json.dumps({
+                "bookingData": {
+                    "name": booking_details['name'],
+                    "phone": booking_details['phone'],
+                    "selectedSlot": selected_slot,
+                    "substanceType": booking_details['substanceType'],
+                    "kommune": booking_details['kommune'],
+                    "ageGroup": booking_details['ageGroup'],
+                    "notes": booking_details['notes']
+                }
+            })
+            
+            message = f"""📋 Gennemgå og bekræft din booking:
+
+```booking-confirmation
+{confirmation_data}
+```"""
+            
+            print(f"   ✅ Booking details collected:")
+            print(f"      Name: {booking_details['name']}")
+            print(f"      Phone: {booking_details['phone']}")
+            print(f"      Type: {booking_details['substanceType']}")
+            print(f"      Kommune: {booking_details['kommune']}")
+            print(f"      Age: {booking_details['ageGroup']}")
+            print("   ⏳ Waiting for final confirmation with terms acceptance...")
+            
+            return {
+                "messages": [AIMessage(content=message)],
+                "booking_active": True,
+                "booking_context": {
+                    **booking_context,
+                    "booking_details": booking_details,
+                    "step": "confirm_booking"
+                }
+            }
+            
+        except (json.JSONDecodeError, ValueError) as e:
+            print(f"   ❌ Failed to parse booking details: {e}")
+            return {
+                "messages": [AIMessage(content="Fejl ved behandling af formularen. Prøv igen.")],
+                "booking_active": True,
+                "booking_context": booking_context
+            }
+    
+    def _step4_confirm_and_book(self, state: Dict[str, Any], booking_context: Dict) -> Dict[str, Any]:
+        """Step 4: Confirm and book appointment"""
+        last_msg = state["messages"][-1]
+        user_input = last_msg.content
+        
+        if isinstance(user_input, list):
+            user_input = " ".join([str(block.get("text", "")) if isinstance(block, dict) else str(block) for block in user_input])
+        
+        user_input_stripped = user_input.strip()
+        
+        # Check if user confirmed (either "CONFIRMED" from UI or "ja"/"yes" text)
+        if user_input_stripped == "CONFIRMED" or "ja" in user_input_stripped.lower() or "yes" in user_input_stripped.lower():
+            selected_slot = booking_context.get("selected_slot")
+            booking_details = booking_context.get("booking_details")
+            
+            print(f"   ⏳ Booking appointment with collected details...")
+            result = self.calendar_tools.book_appointment(selected_slot, booking_details=booking_details)
             
             if result.get("verified"):
                 message = f"""✅ Din tid er booket!

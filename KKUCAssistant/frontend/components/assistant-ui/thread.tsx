@@ -305,6 +305,34 @@ const AssistantActionBar: FC = () => {
 };
 
 const UserMessage: FC = () => {
+  const message = useMessage();
+  
+  // Check if this message is JSON booking data (should be hidden from UI)
+  const isBookingData = message.content.some((part: any) => {
+    if (part.type === "text" && part.text) {
+      const text = part.text.trim();
+      // Check if it's JSON and contains booking fields
+      if (text.startsWith('{') && text.endsWith('}')) {
+        try {
+          const data = JSON.parse(text);
+          // Check if it has booking-related fields
+          return data.name !== undefined && 
+                 data.substanceType !== undefined && 
+                 data.kommune !== undefined &&
+                 data.ageGroup !== undefined;
+        } catch {
+          return false;
+        }
+      }
+    }
+    return false;
+  });
+  
+  // Don't render if this is booking data
+  if (isBookingData) {
+    return null;
+  }
+  
   return (
     <MessagePrimitive.Root asChild>
       <div

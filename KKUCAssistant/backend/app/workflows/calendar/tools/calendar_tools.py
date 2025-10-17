@@ -170,19 +170,45 @@ class CalendarTools:
         print(f"✅ Booking locked: {confirmation['message']}")
         return confirmation
     
-    def book_appointment(self, slot: Dict, name: str = None) -> Dict:
+    def book_appointment(self, slot: Dict, name: str = None, booking_details: Dict = None) -> Dict:
         """
         Tool 3: Book the appointment via API and verify
         Uses random name and description if not provided
         Returns booking confirmation with verification
-        """
-        # Generate random name and description if not provided
-        if name is None:
-            name = random.choice(RANDOM_NAMES)
-        description = random.choice(RANDOM_DESCRIPTIONS)
         
-        print(f"\n📅 Tool 3: Booking appointment for {name}...")
-        print(f"   Description: {description}")
+        Args:
+            slot: Time slot dictionary with datetime, date, time info
+            name: Optional name for the appointment (deprecated, use booking_details['name'] instead)
+            booking_details: Optional dict with name, substanceType, kommune, ageGroup, notes
+        """
+        # Extract name from booking_details if provided, otherwise use provided name or generate random
+        if booking_details and 'name' in booking_details:
+            appointment_name = f"Visitations samtale for {booking_details['name']}"
+        elif name is not None:
+            appointment_name = name
+        else:
+            appointment_name = random.choice(RANDOM_NAMES)
+        
+        # Build description from booking details if provided, otherwise use random
+        if booking_details:
+            description = f"""Booking Information:
+Telefon: {booking_details.get('phone', 'N/A')}
+Type: {booking_details.get('substanceType', 'N/A')}
+Kommune: {booking_details.get('kommune', 'N/A')}
+Aldersgruppe: {booking_details.get('ageGroup', 'N/A')}
+Name: {appointment_name}
+
+Noter:
+{booking_details.get('notes', 'N/A')}"""
+            print(f"\n📅 Tool 3: Booking appointment for {appointment_name}...")
+            print(f"   Phone: {booking_details.get('phone')}")
+            print(f"   Type: {booking_details.get('substanceType')}")
+            print(f"   Kommune: {booking_details.get('kommune')}")
+            print(f"   Age: {booking_details.get('ageGroup')}")
+        else:
+            description = random.choice(RANDOM_DESCRIPTIONS)
+            print(f"\n📅 Tool 3: Booking appointment for {appointment_name}...")
+            print(f"   Description: {description}")
         
         # Handle datetime - it might be a string or datetime object
         slot_start = slot['datetime']
@@ -193,9 +219,9 @@ class CalendarTools:
         
         slot_end = slot_start + timedelta(minutes=20)
         
-        # Create event with random name and description
+        # Create event with user's name and description
         event = {
-            'summary': name,
+            'summary': appointment_name,
             'description': description,
             'start': {
                 'dateTime': slot_start.isoformat(),

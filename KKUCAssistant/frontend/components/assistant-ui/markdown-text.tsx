@@ -14,7 +14,9 @@ import { CheckIcon, CopyIcon } from "lucide-react";
 
 import { TooltipIconButton } from "@/components/assistant-ui/tooltip-icon-button";
 import { TimeSlotPicker } from "@/components/calendar/TimeSlotPicker";
-import type { CalendarSlotsData } from "@/components/calendar/types";
+import { BookingDetailsForm } from "@/components/calendar/BookingDetailsForm";
+import { BookingConfirmation } from "@/components/calendar/BookingConfirmation";
+import type { CalendarSlotsData, BookingDetailsData, BookingConfirmationData } from "@/components/calendar/types";
 import { cn } from "@/lib/utils";
 
 const MarkdownTextImpl = () => {
@@ -225,6 +227,30 @@ const defaultComponents = memoizeMarkdownComponents({
       } catch (e) {
         console.error('Failed to parse calendar slots data:', e);
         return <div>Error loading time slots</div>;
+      }
+    }
+    
+    // Check if this is a booking-details code block
+    if (isCodeBlock && className?.includes('language-booking-details')) {
+      try {
+        const content = String(props.children).replace(/\n$/, '');
+        const data: BookingDetailsData = JSON.parse(content);
+        return <BookingDetailsForm selectedSlot={data.selectedSlot} />;
+      } catch (e) {
+        console.error('Failed to parse booking details data:', e);
+        return <div>Error loading booking details form</div>;
+      }
+    }
+    
+    // Check if this is a booking-confirmation code block
+    if (isCodeBlock && className?.includes('language-booking-confirmation')) {
+      try {
+        const content = String(props.children).replace(/\n$/, '');
+        const data: BookingConfirmationData = JSON.parse(content);
+        return <BookingConfirmation bookingData={data.bookingData} />;
+      } catch (e) {
+        console.error('Failed to parse booking confirmation data:', e);
+        return <div>Error loading booking confirmation</div>;
       }
     }
     
