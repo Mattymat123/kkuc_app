@@ -29,7 +29,7 @@ class Config:
     
     # Claude settings (via OpenRouter)
     OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
-    CLAUDE_CHUNKING_MODEL = "anthropic/claude-sonnet-4.5"  # Latest Sonnet for semantic chunking
+    CLAUDE_CHUNKING_MODEL = "anthropic/claude-haiku-4.5"  # Haiku 4.5 for semantic chunking
     CLAUDE_CONTEXT_MODEL = "anthropic/claude-3.5-haiku"     # Latest Haiku for fast contextualization
     CLAUDE_MAX_TOKENS = 4096
     CLAUDE_TEMPERATURE = 0

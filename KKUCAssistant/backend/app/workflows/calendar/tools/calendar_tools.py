@@ -10,6 +10,7 @@ from typing import List, Dict, Optional
 import pytz
 import os
 import random
+import locale
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -44,6 +45,15 @@ class CalendarTools:
         self.SCOPES = ['https://www.googleapis.com/auth/calendar']
         self.CALENDAR_ID = os.getenv('GOOGLE_CALENDAR_ID', 'primary')
         self.danish_tz = pytz.timezone('Europe/Copenhagen')
+        
+        # Set Danish locale for date formatting
+        try:
+            locale.setlocale(locale.LC_TIME, 'da_DK.UTF-8')
+        except locale.Error:
+            try:
+                locale.setlocale(locale.LC_TIME, 'da_DK')
+            except locale.Error:
+                print("⚠️ Danish locale not available, using default")
         
         # Build service account info from environment variables
         service_account_info = {
@@ -102,40 +112,44 @@ class CalendarTools:
             print(f"❌ Error fetching events: {error}")
             return []
         
-        # Find available 1-hour slots for both Tuesday and Wednesday
+        # Find available 20-minute slots for both Tuesday and Wednesday
         available_slots = []
-        days = [
-            (next_tuesday, 'Tuesday'),
-            (next_wednesday, 'Wednesday')
-        ]
+        days = [next_tuesday, next_wednesday]
         
-        for day_date, day_name in days:
-            for hour in range(10, 14):  # 10:00, 11:00, 12:00, 13:00
-                slot_start = day_date.replace(hour=hour, minute=0, second=0, microsecond=0)
-                slot_end = slot_start + timedelta(hours=1)
-                
-                # Check if slot is available
-                is_available = True
-                for event in booked_events:
-                    event_start = event['start'].get('dateTime', event['start'].get('date'))
-                    event_end = event['end'].get('dateTime', event['end'].get('date'))
+        for day_date in days:
+            # Get Danish weekday name dynamically
+            day_name = day_date.strftime('%A').capitalize()
+            
+            for hour in range(10, 14):  # 10:00 to 14:00
+                for minute in [0, 20, 40]:  # 20-minute intervals
+                    slot_start = day_date.replace(hour=hour, minute=minute, second=0, microsecond=0)
+                    slot_end = slot_start + timedelta(minutes=20)
                     
-                    if 'T' in event_start:
-                        event_start_dt = datetime.fromisoformat(event_start.replace('Z', '+00:00')).astimezone(self.danish_tz)
-                        event_end_dt = datetime.fromisoformat(event_end.replace('Z', '+00:00')).astimezone(self.danish_tz)
+                    # Check if slot is available
+                    is_available = True
+                    for event in booked_events:
+                        event_start = event['start'].get('dateTime', event['start'].get('date'))
+                        event_end = event['end'].get('dateTime', event['end'].get('date'))
                         
-                        # Check for overlap
-                        if not (slot_end <= event_start_dt or slot_start >= event_end_dt):
-                            is_available = False
-                            break
-                
-                if is_available:
-                    available_slots.append({
-                        'date': slot_start.strftime('%Y-%m-%d'),
-                        'day': day_name,
-                        'time': slot_start.strftime('%H:%M'),
-                        'datetime': slot_start
-                    })
+                        if 'T' in event_start:
+                            event_start_dt = datetime.fromisoformat(event_start.replace('Z', '+00:00')).astimezone(self.danish_tz)
+                            event_end_dt = datetime.fromisoformat(event_end.replace('Z', '+00:00')).astimezone(self.danish_tz)
+                            
+                            # Check for overlap
+                            if not (slot_end <= event_start_dt or slot_start >= event_end_dt):
+                                is_available = False
+                                break
+                    
+                    if is_available:
+                        # Format date in Danish: "17. oktober" using locale
+                        formatted_date = slot_start.strftime('%d. %B').lstrip('0')
+                        
+                        available_slots.append({
+                            'date': formatted_date,
+                            'day': day_name,
+                            'time': slot_start.strftime('%H:%M'),
+                            'datetime': slot_start
+                        })
         
         print(f"✅ Found {len(available_slots)} available slots (Tuesday & Wednesday)")
         return available_slots
@@ -150,7 +164,7 @@ class CalendarTools:
         confirmation = {
             'status': 'pending_confirmation',
             'slot': selected_slot,
-            'message': f"Please confirm booking for {selected_slot['day']}, {selected_slot['date']} at {selected_slot['time']}-{(selected_slot['datetime'] + timedelta(hours=1)).strftime('%H:%M')}"
+            'message': f"Please confirm booking for {selected_slot['day']}, {selected_slot['date']} at {selected_slot['time']}-{(selected_slot['datetime'] + timedelta(minutes=20)).strftime('%H:%M')}"
         }
         
         print(f"✅ Booking locked: {confirmation['message']}")
@@ -177,7 +191,7 @@ class CalendarTools:
             if slot_start.tzinfo is None:
                 slot_start = self.danish_tz.localize(slot_start)
         
-        slot_end = slot_start + timedelta(hours=1)
+        slot_end = slot_start + timedelta(minutes=20)
         
         # Create event with random name and description
         event = {

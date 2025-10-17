@@ -13,9 +13,9 @@ from langchain_core.messages import HumanMessage, SystemMessage, BaseMessage
 from langgraph.graph import StateGraph, END
 from langsmith import traceable
 
-from ..tools.rag.search_tools import SearchTools
-from ..tools.rag.query_tools import QueryTools
-from ..tools.rag.validation_tools import ValidationTools
+from .tools.search_tools import SearchTools
+from .tools.query_tools import QueryTools
+from .tools.validation_tools import ValidationTools
 
 load_dotenv()
 
@@ -41,7 +41,7 @@ class SimplifiedRAGWorkflow:
         """Initialize RAG workflow with tools and LangSmith tracing"""
         # Initialize LLM for answer generation
         self.llm = ChatOpenAI(
-            model="anthropic/claude-sonnet-4.5",
+            model="anthropic/claude-haiku-4.5",
             temperature=0,
             openai_api_key=os.getenv("OPENROUTER_API_KEY"),
             openai_api_base="https://openrouter.ai/api/v1"

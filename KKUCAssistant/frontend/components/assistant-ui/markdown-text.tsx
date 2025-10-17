@@ -13,6 +13,8 @@ import { type FC, memo, useState } from "react";
 import { CheckIcon, CopyIcon } from "lucide-react";
 
 import { TooltipIconButton } from "@/components/assistant-ui/tooltip-icon-button";
+import { TimeSlotPicker } from "@/components/calendar/TimeSlotPicker";
+import type { CalendarSlotsData } from "@/components/calendar/types";
 import { cn } from "@/lib/utils";
 
 const MarkdownTextImpl = () => {
@@ -205,7 +207,7 @@ const defaultComponents = memoizeMarkdownComponents({
   pre: ({ className, ...props }) => (
     <pre
       className={cn(
-        "aui-md-pre overflow-x-auto !rounded-t-none rounded-b-lg bg-black p-4 text-white",
+        "aui-md-pre overflow-x-auto !rounded-t-none rounded-b-lg bg-white p-4 text-white",
         className,
       )}
       {...props}
@@ -213,6 +215,19 @@ const defaultComponents = memoizeMarkdownComponents({
   ),
   code: function Code({ className, ...props }) {
     const isCodeBlock = useIsMarkdownCodeBlock();
+    
+    // Check if this is a calendar-slots code block
+    if (isCodeBlock && className?.includes('language-calendar-slots')) {
+      try {
+        const content = String(props.children).replace(/\n$/, '');
+        const data: CalendarSlotsData = JSON.parse(content);
+        return <TimeSlotPicker data={data} />;
+      } catch (e) {
+        console.error('Failed to parse calendar slots data:', e);
+        return <div>Error loading time slots</div>;
+      }
+    }
+    
     return (
       <code
         className={cn(

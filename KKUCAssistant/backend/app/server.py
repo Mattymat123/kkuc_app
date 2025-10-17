@@ -171,6 +171,7 @@ async def get_thread_state(thread_id: str):
 
 
 # Store thread IDs per session (in production, use Redis or database)
+# Map: client_session_id -> thread_id
 session_threads = {}
 
 # Legacy endpoint for backward compatibility
@@ -179,18 +180,29 @@ async def chat_endpoint(input_data: Dict[str, Any]):
     """Legacy chat endpoint with thread persistence"""
     messages = input_data.get("messages", [])
     
-    # Use a session identifier based on message history hash
-    # This allows the same conversation to continue
-    session_key = str(hash(str([m.get("content", "") if isinstance(m, dict) else str(m) for m in messages[:2]])))
+    # Use client-provided session ID if available, otherwise generate one
+    # The frontend should send a consistent session_id to maintain thread continuity
+    client_session_id = input_data.get("session_id")
+    
+    if not client_session_id:
+        # Fallback: Generate session key from conversation ID or first message
+        # Use all message content to ensure thread continuity
+        all_content = "".join([
+            str(m.get("content", "") if isinstance(m, dict) else str(m)) 
+            for m in messages
+        ])
+        # Use a more stable identifier - hash of first message only
+        first_message_content = str(messages[0].get("content", "") if messages else "")
+        client_session_id = str(hash(first_message_content)) if first_message_content else str(uuid.uuid4())
     
     # Get or create thread ID for this session
-    if session_key in session_threads:
-        thread_id = session_threads[session_key]
+    if client_session_id in session_threads:
+        thread_id = session_threads[client_session_id]
         print(f"📌 Using existing thread: {thread_id}")
     else:
         thread_id = str(uuid.uuid4())
-        session_threads[session_key] = thread_id
-        print(f"🆕 Created new thread: {thread_id}")
+        session_threads[client_session_id] = thread_id
+        print(f"🆕 Created new thread: {thread_id} for session: {client_session_id[:8]}...")
     
     async def generate_stream():
         try:
@@ -237,13 +249,39 @@ async def chat_endpoint(input_data: Dict[str, Any]):
                     if isinstance(output, dict) and "messages" in output:
                         final_messages = output["messages"]
             
-            # If no tokens were streamed (e.g., calendar booking), stream the final message
+            # If no tokens were streamed (e.g., calendar booking), stream ONLY the LAST message
             if not streamed_tokens and final_messages:
-                for msg in final_messages:
+                # Only stream the last AI message (the new response)
+                last_ai_msg = None
+                for msg in reversed(final_messages):
                     if isinstance(msg, AIMessage) and msg.content:
-                        # Stream the complete message
-                        yield f'0:{json.dumps(msg.content)}\n'
-                        await asyncio.sleep(0)
+                        last_ai_msg = msg
+                        break
+                
+                if last_ai_msg:
+                    # Ensure content is a string (handle dict/list/object cases)
+                    content = last_ai_msg.content
+                    if not isinstance(content, str):
+                        # If it's a dict or list, convert to JSON string
+                        if isinstance(content, (dict, list)):
+                            content = json.dumps(content)
+                        else:
+                            # For any other type, convert to string
+                            content = str(content)
+                    
+                    yield f'0:{json.dumps(content)}\n'
+                    await asyncio.sleep(0)
+            
+            # Determine flow type from final state
+            flow_type = "rag"  # default
+            if isinstance(output, dict):
+                booking_active = output.get("booking_active", False)
+                if booking_active or not streamed_tokens:
+                    # If booking_active or calendar flow (no streamed tokens)
+                    flow_type = "calendar"
+            
+            # Send flow metadata
+            yield f'8:[{json.dumps({"flowType": flow_type})}]\n'
             
             # Send completion marker
             yield 'd:{"finishReason":"stop"}\n'

@@ -20,8 +20,10 @@ import {
 } from "@assistant-ui/react";
 
 import type { FC } from "react";
+import { useState, useEffect } from "react";
 import { LazyMotion, MotionConfig, domAnimation } from "motion/react";
 import * as m from "motion/react-m";
+import { useMessage } from "@assistant-ui/react";
 
 import { Button } from "@/components/ui/button";
 import { MarkdownText } from "@/components/assistant-ui/markdown-text";
@@ -125,6 +127,10 @@ const ThreadSuggestions: FC = () => {
           text: "Hvilke behandlinger tilbyder I?",
           prompt: "Hvilke behandlinger tilbyder I?",
         },
+        {
+          text: "Book min første tid",
+          prompt: "Book min første tid",
+        },
       ].map((suggestion, index) => (
         <m.div
           key={suggestion.text}
@@ -151,32 +157,6 @@ const ThreadSuggestions: FC = () => {
           </ThreadPrimitive.Suggestion>
         </m.div>
       ))}
-      
-      <m.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: 20 }}
-        transition={{ delay: 0.35 }}
-        className="aui-thread-welcome-suggestion-display mt-2"
-      >
-        <Button
-          variant="default"
-          className="w-full rounded-3xl px-8 py-4 text-lg transition-all duration-200 hover:scale-105 hover:shadow-lg"
-          style={{ 
-            backgroundColor: 'rgba(223, 97, 65, 0.85)', 
-            color: 'white',
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor = '#DF6141';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.backgroundColor = 'rgba(223, 97, 65, 0.85)';
-          }}
-          onClick={() => window.open('https://kkuc.dk/kontakt', '_blank')}
-        >
-          Book din første tid
-        </Button>
-      </m.div>
     </div>
   );
 };
@@ -247,6 +227,24 @@ const MessageError: FC = () => {
 };
 
 const AssistantMessage: FC = () => {
+  const message = useMessage();
+  
+  // Check if message is calendar-related by looking for calendar UI components or booking keywords
+  const isCalendarFlow = message.content.some((part: any) => {
+    if (part.type === "tool-call" || part.type === "ui") return true;
+    if (part.type === "text" && part.text) {
+      const text = part.text.toLowerCase();
+      // Check for calendar-specific phrases from the workflow
+      return text.includes("vælg din ønskede tid") || 
+             text.includes("du har valgt:") ||
+             text.includes("din tid er booket") ||
+             text.includes("calendar-slots") ||
+             text.includes("bekræft ved at skrive") ||
+             text.includes("booking annulleret");
+    }
+    return false;
+  });
+  
   return (
     <MessagePrimitive.Root asChild>
       <div
@@ -262,35 +260,35 @@ const AssistantMessage: FC = () => {
           />
           <MessageError />
           
-          {/* Book appointment button - only show on last message when not running */}
-          <MessagePrimitive.If last>
-            <ThreadPrimitive.If running={false}>
-              <m.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.2 }}
-                className="mt-6"
-              >
-                <Button
-                  variant="default"
-                  className="rounded-3xl px-8 py-4 text-lg transition-all duration-200 hover:scale-105 hover:shadow-lg"
-                  style={{ 
-                    backgroundColor: 'rgba(223, 97, 65, 0.85)', 
-                    color: 'white',
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.backgroundColor = '#DF6141';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.backgroundColor = 'rgba(223, 97, 65, 0.85)';
-                  }}
-                  onClick={() => window.open('https://kkuc.dk/kontakt', '_blank')}
+          {/* Suggested question - only show on last RAG message (not calendar flow) when not running */}
+          {!isCalendarFlow && (
+            <MessagePrimitive.If last>
+              <ThreadPrimitive.If running={false}>
+                <m.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.2 }}
+                  className="mt-6"
                 >
-                  Book din første tid
-                </Button>
-              </m.div>
-            </ThreadPrimitive.If>
-          </MessagePrimitive.If>
+                  <ThreadPrimitive.Suggestion
+                    prompt="Book min første tid"
+                    send
+                    asChild
+                  >
+                    <Button
+                      variant="outline"
+                      className="rounded-3xl px-8 py-4 text-lg transition-all duration-200 hover:scale-[1.02] hover:shadow-md"
+                      style={{ 
+                        borderColor: 'rgba(223, 97, 65, 0.3)',
+                      }}
+                    >
+                      Har du brug for at booke en tid?
+                    </Button>
+                  </ThreadPrimitive.Suggestion>
+                </m.div>
+              </ThreadPrimitive.If>
+            </MessagePrimitive.If>
+          )}
         </div>
 
         <div className="aui-assistant-message-footer mt-2 ml-2 flex">

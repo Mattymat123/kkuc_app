@@ -6,13 +6,13 @@ This pipeline crawls the KKUC website, processes content into semantic chunks, a
 
 The pipeline performs these steps:
 1. **Crawl** - Uses Firecrawl to crawl all pages from kkuc.dk
-2. **Chunk** - Uses Claude Sonnet 4.5 (via OpenRouter) to break pages into semantic chunks
+2. **Chunk** - Uses Claude Haiku 4.5 (via OpenRouter) to break pages into semantic chunks
 3. **Contextualize** - Uses Claude 3.5 Haiku (via OpenRouter) to add context to each chunk
 4. **Embed** - Uses Cohere embed-multilingual-v3.0 to generate embeddings (supports Danish)
 5. **Upload** - Stores in Weaviate with hybrid search enabled
 
 **Models Used**:
-- **Chunking**: `anthropic/claude-sonnet-4.5` - Latest Sonnet for intelligent semantic chunking
+- **Chunking**: `anthropic/claude-haiku-4.5` - Haiku 4.5 for intelligent semantic chunking
 - **Contextualization**: `anthropic/claude-3.5-haiku` - Fast Haiku for adding document context
 - **Embeddings**: `embed-multilingual-v3.0` - Cohere's multilingual model (optimized for Danish)
 
@@ -139,7 +139,7 @@ for item in results.objects:
 ### OpenRouter/Claude API errors
 - Check your OpenRouter API key is valid
 - Ensure you have sufficient credits on OpenRouter
-- The pipeline uses Claude Sonnet 4.5 and Claude 3.5 Haiku through OpenRouter
+- The pipeline uses Claude Haiku 4.5 and Claude 3.5 Haiku through OpenRouter
 
 ### Cohere API errors
 - Check your Cohere API key is valid
@@ -152,10 +152,10 @@ For ~100 pages with 7 chunks per page:
 | Service | Cost |
 |---------|------|
 | Firecrawl crawling | $0.10 |
-| Claude Sonnet (chunking) | $1.00 |
-| Claude Haiku (context) | $1.40 |
+| Claude Haiku 4.5 (chunking) | $0.20 |
+| Claude 3.5 Haiku (context) | $1.40 |
 | Cohere embeddings | $0.07 |
-| **Total** | **~$2.57** |
+| **Total** | **~$1.77** |
 
 ## Next Steps
 

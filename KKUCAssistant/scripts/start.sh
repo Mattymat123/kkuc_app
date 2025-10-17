@@ -81,8 +81,30 @@ else
     echo -e "${GREEN}✓ Frontend dependencies already installed${NC}"
 fi
 
-# Step 4: Start backend server
-echo -e "\n${YELLOW}[4/5] Starting backend server...${NC}"
+# Step 4: Start LangGraph Studio
+echo -e "\n${YELLOW}[4/6] Starting LangGraph Studio...${NC}"
+cd "$PROJECT_ROOT"
+
+# Check if langgraph CLI is available
+if command -v langgraph &> /dev/null; then
+    # Start LangGraph Studio in background with --tunnel flag
+    langgraph dev --tunnel &
+    STUDIO_PID=$!
+    
+    # Wait a moment for Studio to start
+    sleep 2
+    
+    if ps -p $STUDIO_PID > /dev/null; then
+        echo -e "${GREEN}✓ LangGraph Studio started with tunnel${NC}"
+    else
+        echo -e "${YELLOW}⚠ LangGraph Studio may not have started properly${NC}"
+    fi
+else
+    echo -e "${YELLOW}⚠ langgraph CLI not found. Install with: pip install langgraph-cli${NC}"
+fi
+
+# Step 5: Start backend server
+echo -e "\n${YELLOW}[5/6] Starting backend server...${NC}"
 cd "$BACKEND_DIR"
 source "$VENV_DIR/bin/activate"
 
@@ -100,8 +122,8 @@ else
     exit 1
 fi
 
-# Step 5: Start frontend server
-echo -e "\n${YELLOW}[5/5] Starting frontend server...${NC}"
+# Step 6: Start frontend server
+echo -e "\n${YELLOW}[6/6] Starting frontend server...${NC}"
 cd "$FRONTEND_DIR"
 
 # Start frontend in background
@@ -123,8 +145,9 @@ fi
 echo -e "\n${GREEN}========================================${NC}"
 echo -e "${GREEN}Application is running!${NC}"
 echo -e "${GREEN}========================================${NC}"
-echo -e "Backend:  ${GREEN}http://localhost:8000${NC}"
-echo -e "Frontend: ${GREEN}http://localhost:3000${NC}"
+echo -e "Backend:        ${GREEN}http://localhost:8000${NC}"
+echo -e "Frontend:       ${GREEN}http://localhost:3000${NC}"
+echo -e "LangGraph UI:   ${GREEN}http://localhost:8123${NC}"
 echo -e "\n${YELLOW}Press Ctrl+C to stop all services${NC}\n"
 
 # Wait for both processes

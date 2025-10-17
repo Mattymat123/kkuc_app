@@ -1,0 +1,10 @@
+{
+  "graphs": {
+    "agent": "./backend/app/agent.py:agent_executor"
+  },
+  "dependencies": [
+    "./backend"
+  ],
+  "env": "./backend/.env",
+  "python_version": "3.11"
+}
